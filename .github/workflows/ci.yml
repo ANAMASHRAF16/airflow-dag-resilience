@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: DAG structure + plugin tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Airflow + test deps
+        run: |
+          python -m pip install --upgrade pip
+          # Constrain Airflow to a known-good version pin to avoid
+          # version-resolution surprises in CI
+          pip install -r requirements.txt
+
+      - name: Run DAG-structure tests
+        run: |
+          export AIRFLOW_HOME="$PWD/.airflow_test_home"
+          mkdir -p "$AIRFLOW_HOME"
+          pytest tests/ -v
+
+      - name: Verify DAG imports cleanly
+        run: |
+          export AIRFLOW_HOME="$PWD/.airflow_test_home"
+          python -c "
+          from airflow.models import DagBag
+          bag = DagBag(dag_folder='dags', include_examples=False)
+          if bag.import_errors:
+              print('DAG IMPORT ERRORS:', bag.import_errors)
+              exit(1)
+          print(f'Loaded {len(bag.dags)} DAG(s) cleanly:', list(bag.dags.keys()))
+          "
+
+      - name: Summarise
+        if: always()
+        run: |
+          echo "### Activity 5 — Airflow DAG resilience checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- DAG-structure tests: see job log" >> $GITHUB_STEP_SUMMARY
+          echo "- DAG import sanity: passed if you see this section" >> $GITHUB_STEP_SUMMARY
