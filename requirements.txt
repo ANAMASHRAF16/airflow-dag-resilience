@@ -1,0 +1,5 @@
+apache-airflow==2.10.0
+apache-airflow-providers-amazon==8.27.0
+apache-airflow-providers-http==4.13.0
+requests==2.32.0
+pytest==8.0.0

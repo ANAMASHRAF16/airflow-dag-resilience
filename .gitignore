@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+airflow.cfg
+airflow.db
+logs/
+dag_processor_manager/
+unittests.db
+webserver_config.py
+
+# Scratch
+PR_DESCRIPTION.md
+VIDEO_SCRIPT.md
