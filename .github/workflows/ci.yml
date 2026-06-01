@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: DAG structure + plugin tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install test dependencies only
+        run: |
+          # The tests are AST-based and do not import the airflow package,
+          # so we deliberately skip the heavy Airflow install in CI - it's
+          # ~80 dependencies and flaky on 3.x's namespace-package layout.
+          # Production deployment uses the full apache-airflow runtime;
+          # CI's job is just to verify the DAG source has the right shape.
+          python -m pip install --upgrade pip
+          pip install pytest requests
+
+      - name: Run all tests
+        run: pytest tests/ -v
+
+      - name: Summarise
+        if: always()
+        run: |
+          echo "### Activity 5 — Airflow DAG resilience checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- DAG-structure tests (AST-based, no Airflow runtime): see job log" >> $GITHUB_STEP_SUMMARY
+          echo "- Plugin tests (logger + Slack callback): see job log" >> $GITHUB_STEP_SUMMARY
